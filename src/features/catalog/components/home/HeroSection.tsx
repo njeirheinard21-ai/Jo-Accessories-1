@@ -33,10 +33,10 @@ export function HeroSection() {
               <span className="text-[10px] font-sans tracking-[0.3em] uppercase text-ash font-semibold">Spring / Summer 2026</span>
             </div>
             
-            <h1 className="text-6xl md:text-[6rem] lg:text-[8rem] font-serif text-ash leading-[0.85] tracking-tight mb-10 uppercase text-balance">
-              The <br />
-              <span className="italic font-light text-ash-muted capitalize">New</span><br />
-              Elegance
+            <h1 className="text-5xl md:text-[5rem] lg:text-[6.5rem] font-serif text-ash leading-[0.85] tracking-tight mb-10 uppercase text-balance">
+              Elegance <br />
+              <span className="italic font-light text-ash-muted capitalize">In Every</span><br />
+              Detail
             </h1>
             
             <p className="text-ash-muted font-sans font-light text-sm md:text-base leading-[1.8] max-w-sm mb-12">

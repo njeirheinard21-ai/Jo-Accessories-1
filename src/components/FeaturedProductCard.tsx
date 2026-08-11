@@ -19,7 +19,7 @@ export const FeaturedProductCard = memo(function FeaturedProductCard({ id, name,
   
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
-    addItem({ id, name, price, image, quantity: 1, ...product } as Product);
+    addItem({ id, name, price, image, quantity: 1, ...product } as unknown as Product);
     openCart();
   };
 

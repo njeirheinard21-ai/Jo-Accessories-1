@@ -1,9 +1,9 @@
-import { useState, useMemo } from "react"
+import { useState, useMemo, memo } from "react"
 import { Search, Filter, ChevronLeft, ChevronRight, MoreHorizontal, ArrowUpDown } from "lucide-react"
 
-interface Column<T> {
+export interface Column<T> {
   header: string
-  accessor: keyof T | ((row: T) => React.ReactNode)
+  accessor: keyof T | string | ((row: T) => React.ReactNode)
   sortable?: boolean
   className?: string
 }
@@ -17,7 +17,7 @@ interface DataTableProps<T> {
   renderActions?: (row: T) => React.ReactNode
 }
 
-export const DataTable = memo(function DataTable<T extends { id?: string | number }>({ 
+export const DataTable = memo(function DataTable<T extends Record<string, any>>({ 
   data, 
   columns, 
   searchPlaceholder = "SEARCH...",

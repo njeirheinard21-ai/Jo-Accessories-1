@@ -120,14 +120,16 @@ export function Checkout() {
           phone: formData.phone,
           address: formData.address,
           city: formData.city,
+          state: '',
+          zip: '',
           country: formData.country,
           notes: formData.notes || ''
-        }
+        } as any
       }
       
-      const orderId = await orderService.createDraftOrder(draftOrder)
+      const order = await orderService.createDraftOrder(draftOrder as any)
       
-      const message = generateWhatsAppMessage(formData, orderId)
+      const message = generateWhatsAppMessage(formData, order.id)
       const encodedMessage = encodeURIComponent(message)
       const whatsappNumber = "237675122389" // Target official WhatsApp number
       
