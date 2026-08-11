@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Montserrat", system-ui, -apple-system, sans-serif;
+  --font-serif: "Cormorant Garamond", ui-serif, Georgia, serif;
+  
+  --color-background: #FFFFFF;
+  --color-foreground: #2C3039;
+  --color-ash: #2C3039;
+  --color-ash-light: #E8EAED;
+  --color-ash-muted: #6B7280;
+  
+  --color-border: hsl(220 13% 91%);
+  --color-input: hsl(220 13% 91%);
+  --color-ring: hsl(222 13% 20%);
+  --color-primary: hsl(222 13% 20%);
+  --color-primary-foreground: hsl(0 0% 100%);
+  --color-secondary: hsl(220 14% 96%);
+  --color-secondary-foreground: hsl(222 13% 20%);
+  --color-muted: hsl(220 14% 96%);
+  --color-muted-foreground: hsl(215 16% 47%);
+  --color-accent: hsl(220 14% 96%);
+  --color-accent-foreground: hsl(222 13% 20%);
+  --color-destructive: hsl(0 84.2% 60.2%);
+  --color-destructive-foreground: hsl(0 0% 98%);
+  
+  --radius-sm: 0rem;
+  --radius-md: 0rem;
+  --radius-lg: 0rem;
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%; /* #FFFFFF */
+    --foreground: 222 13% 20%; /* #2C3039 */
+    
+    --card: 0 0% 100%;
+    --card-foreground: 222 13% 20%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 13% 20%;
+    
+    --primary: 222 13% 20%;
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 220 14% 96%; /* #F3F4F6 */
+    --secondary-foreground: 222 13% 20%;
+    
+    --muted: 220 14% 96%;
+    --muted-foreground: 215 16% 47%; /* #6B7280 */
+    
+    --accent: 220 14% 96%;
+    --accent-foreground: 222 13% 20%;
+    
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    
+    --border: 220 13% 91%; /* #E8EAED */
+    --input: 220 13% 91%;
+    --ring: 222 13% 20%;
+    --radius: 0rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground font-sans antialiased selection:bg-ash selection:text-white;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    width: 100%;
+    min-height: 100vh;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .luxury-transition {
+    @apply transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)];
+  }
+}

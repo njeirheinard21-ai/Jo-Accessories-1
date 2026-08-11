@@ -1,0 +1,48 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isStaff() {
+      // In storage rules we can't easily check Firestore documents without custom claims,
+      // so if custom claims are not set, we can at least check auth.
+      // But let's assume we have custom claims set by our Node backend
+      return isAuthenticated() && request.auth.token.role in ['super_admin', 'store_owner', 'admin', 'inventory_manager', 'marketing_manager', 'staff'];
+    }
+
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    function isUnderSizeLimit() {
+      return request.resource.size < 5 * 1024 * 1024; // 5MB
+    }
+
+    // Product images
+    match /products/{imageId} {
+      allow read: if true;
+      allow write: if isStaff() && isImage() && isUnderSizeLimit();
+    }
+    
+    // Customer profile images
+    match /profiles/{userId}/{imageId} {
+      allow read: if true;
+      allow write: if isAuthenticated() && request.auth.uid == userId && isImage() && isUnderSizeLimit();
+    }
+    
+    // Secure documents (e.g. invoices)
+    match /secure/{userId}/{docId} {
+      allow read, write: if isAuthenticated() && (request.auth.uid == userId || isStaff());
+    }
+
+    // Default deny
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

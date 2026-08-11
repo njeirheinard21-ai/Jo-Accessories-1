@@ -1,0 +1,8 @@
+{
+  "name": "Jo Accessories",
+  "description": "Premium electronics, luxury pieces, iconic handbags, and transformative cosmetics storefront and admin platform.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

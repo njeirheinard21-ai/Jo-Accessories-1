@@ -1,0 +1,121 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions for roles
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    function getRole() {
+      return isAuthenticated() ? getUserData().role : 'guest';
+    }
+
+    function isSuperAdmin() {
+      return isAuthenticated() && (getRole() == 'super_admin' || getRole() == 'store_owner');
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (getRole() == 'admin' || isSuperAdmin());
+    }
+
+    function isStaff() {
+      return isAuthenticated() && (getRole() in ['admin', 'super_admin', 'store_owner', 'inventory_manager', 'order_manager', 'marketing_manager', 'customer_support', 'staff']);
+    }
+
+    function isInitialSuperAdminSetup(userId) {
+      return request.auth.uid == userId 
+          && (request.auth.token.email == 'njeirheinard@gmail.com' || request.auth.token.email == 'njeirheinard21@gmail.com')
+          && request.resource.data.role == 'super_admin';
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isStaff());
+      allow create: if isAuthenticated() && request.auth.uid == userId && (
+        request.resource.data.role == 'customer' || isInitialSuperAdminSetup(userId) || isSuperAdmin()
+      );
+      allow update: if isAuthenticated() && (
+        (request.auth.uid == userId && request.resource.data.role == resource.data.role)
+        || isSuperAdmin()
+        || (request.auth.uid == userId && request.resource.data.role == 'super_admin' && (request.auth.token.email == 'njeirheinard@gmail.com' || request.auth.token.email == 'njeirheinard21@gmail.com'))
+      );
+      allow delete: if isSuperAdmin();
+    }
+
+    // Products collection
+    match /products/{productId} {
+      // Anyone can read active products
+      allow read: if true;
+      // Only admins can write
+      allow write: if isSuperAdmin() || getRole() == 'admin' || getRole() == 'inventory_manager';
+    }
+
+    // Orders collection
+    match /orders/{orderId} {
+      // Users can read their own orders, admins can read all
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isStaff());
+      // Users can create orders, only admins can update/delete
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSuperAdmin() || getRole() == 'admin' || getRole() == 'order_manager' || getRole() == 'customer_support';
+    }
+    
+    // Inventory, Settings, Analytics - Admin only
+    match /inventory/{docId} {
+      allow read, write: if isSuperAdmin() || getRole() == 'admin' || getRole() == 'inventory_manager';
+    }
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+    
+    match /categories/{docId} {
+      allow read: if true;
+      allow write: if isSuperAdmin() || getRole() == 'admin' || getRole() == 'inventory_manager';
+    }
+    
+    match /collections/{docId} {
+      allow read: if true;
+      allow write: if isSuperAdmin() || getRole() == 'admin' || getRole() == 'marketing_manager';
+    }
+
+    match /customers/{docId} {
+      allow read: if isStaff();
+      allow write: if isSuperAdmin() || getRole() == 'admin' || getRole() == 'customer_support';
+    }
+    
+    match /marketing/{docId} {
+      allow read: if isStaff();
+      allow write: if isSuperAdmin() || getRole() == 'marketing_manager';
+    }
+
+    match /cms/{docId} {
+      allow read: if true;
+      allow write: if isSuperAdmin() || getRole() == 'marketing_manager' || getRole() == 'admin';
+    }
+
+    match /roles/{docId} {
+      allow read: if isStaff();
+      allow write: if isSuperAdmin();
+    }
+
+    match /permissions/{docId} {
+      allow read: if isStaff();
+      allow write: if isSuperAdmin();
+    }
+    
+    match /notifications/{docId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isStaff());
+      allow write: if isStaff();
+    }
+
+    match /audit_logs/{logId} {
+      allow read: if isSuperAdmin();
+      allow create: if isStaff() || isSuperAdmin() || isAuthenticated();
+    }
+  }
+}
