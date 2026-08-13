@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { orderService, Order } from '../../services/orderService';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
+import { useWishlistStore } from '../../stores/wishlistStore';
 import { authService } from '../../services/authService';
 import { Package, Heart, Clock, Settings, LogOut, FileText, HelpCircle, Shield, Award } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { ProductCard } from '../../components/ProductCard';
 
 export function AccountDashboard() {
   const user = useAuthStore((state: any) => state.user);
@@ -16,6 +18,8 @@ export function AccountDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
 
+  const wishlistItems = useWishlistStore(state => state.items);
+  
   useEffect(() => {
     if (user && activeTab === 'orders') {
       orderService.getUserOrders(user.uid).then(data => {
@@ -96,9 +100,12 @@ export function AccountDashboard() {
                 </div>
               ) : orders.length === 0 ? (
                 <div className="text-center py-20">
-                  <Package className="w-12 h-12 text-white/40 mx-auto mb-4" strokeWidth={1} />
-                  <p className="text-[10px] font-sans font-semibold uppercase tracking-[0.2em] text-ash-muted mb-6">No Orders Found</p>
-                  <button onClick={() => navigate('/shop')} className="border border-ash px-8 py-3 text-[10px] uppercase tracking-[0.2em] font-sans font-semibold hover:bg-ash hover:text-white transition-colors">Start Shopping</button>
+                  <Package className="w-12 h-12 text-ash/20 mx-auto mb-6" strokeWidth={1} />
+                  <p className="text-2xl font-serif uppercase tracking-widest text-ash mb-4">No Purchase History</p>
+                  <p className="text-ash-muted font-sans font-light text-sm max-w-sm mx-auto mb-10 leading-[1.8]">
+                    You haven't made any purchases yet. Your future orders will be tracked here.
+                  </p>
+                  <button onClick={() => navigate('/shop')} className="border border-ash px-10 py-4 text-[10px] uppercase tracking-[0.2em] font-sans font-bold hover:bg-ash hover:text-white luxury-transition outline-none focus-visible:ring-1 focus-visible:ring-ash focus-visible:ring-offset-2">Start Shopping</button>
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -135,11 +142,22 @@ export function AccountDashboard() {
 
             
             {activeTab === 'wishlist' && (
-              <div className="text-center py-20">
-                <Heart className="w-12 h-12 text-white/40 mx-auto mb-4" strokeWidth={1} />
-                <p className="text-[10px] font-sans font-semibold uppercase tracking-[0.2em] text-ash-muted mb-6">Your Wishlist is Empty</p>
-                <button onClick={() => navigate('/shop')} className="border border-ash px-8 py-3 text-[10px] uppercase tracking-[0.2em] font-sans font-semibold hover:bg-ash hover:text-white transition-colors">Discover Pieces</button>
-              </div>
+              wishlistItems.length === 0 ? (
+                <div className="text-center py-20">
+                  <Heart className="w-12 h-12 text-ash/20 mx-auto mb-6" strokeWidth={1} />
+                  <p className="text-2xl font-serif uppercase tracking-widest text-ash mb-4">No Saved Items</p>
+                  <p className="text-ash-muted font-sans font-light text-sm max-w-sm mx-auto mb-10 leading-[1.8]">
+                    You haven't saved any pieces yet. Curate your personal collection by adding items to your wishlist.
+                  </p>
+                  <button onClick={() => navigate('/shop')} className="border border-ash px-10 py-4 text-[10px] uppercase tracking-[0.2em] font-sans font-bold hover:bg-ash hover:text-white luxury-transition outline-none focus-visible:ring-1 focus-visible:ring-ash focus-visible:ring-offset-2">Discover Pieces</button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+                  {wishlistItems.map(item => (
+                    <ProductCard key={item.id} {...item} />
+                  ))}
+                </div>
+              )
             )}
             
             {activeTab === 'warranty' && (

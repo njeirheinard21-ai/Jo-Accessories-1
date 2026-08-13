@@ -1,16 +1,39 @@
 import { useState, useMemo } from "react"
 import { useInfiniteQuery } from "@tanstack/react-query"
-import { productService } from "../../services/productService"
+import { productService, ProductFilters } from "../../services/productService"
 import { ProductCard } from "../../components/ProductCard"
 import { Filter, ChevronDown } from "lucide-react"
 import { SEO } from "../../components/SEO"
 import { FiltersSidebar } from "../../features/catalog/components/shop/FiltersSidebar"
 import { motion } from "motion/react"
+import { useSearchParams } from "react-router-dom"
 
 export function Shop() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false)
   const [sortOpen, setSortOpen] = useState(false)
-  const [sortBy, setSortBy] = useState("Newest")
+  
+  const sortBy = searchParams.get('sort') || 'Recommended';
+  const category = searchParams.get('category') || undefined;
+  
+  // Read array parameters (if any)
+  const brandsParam = searchParams.get('brands');
+  const brands = brandsParam ? brandsParam.split(',') : [];
+  
+  const colorsParam = searchParams.get('colors');
+  const colors = colorsParam ? colorsParam.split(',') : [];
+  
+  const minPrice = searchParams.get('minPrice') ? Number(searchParams.get('minPrice')) : undefined;
+  const maxPrice = searchParams.get('maxPrice') ? Number(searchParams.get('maxPrice')) : undefined;
+  
+  const filters: ProductFilters = {
+    category,
+    brand: brands.length > 0 ? brands : undefined,
+    colors: colors.length > 0 ? colors : undefined,
+    minPrice,
+    maxPrice,
+    sort: sortBy
+  };
 
   const {
     data,
@@ -19,21 +42,24 @@ export function Shop() {
     hasNextPage,
     fetchNextPage
   } = useInfiniteQuery({
-    queryKey: ['products', sortBy],
-    queryFn: ({ pageParam }) => productService.getProducts(12, pageParam),
-    getNextPageParam: (lastPage) => lastPage.lastDoc || undefined,
-    initialPageParam: undefined as any
+    queryKey: ['products', filters],
+    queryFn: ({ pageParam = 0 }) => productService.getProducts(12, pageParam, filters),
+    getNextPageParam: (lastPage, allPages) => lastPage.hasNextPage ? allPages.length : undefined,
+    initialPageParam: 0
   })
 
   const products = useMemo(() => {
     return data?.pages.flatMap(page => page.products) || [];
-  }, [data])
+  }, [data]);
+  
+  const totalCount = data?.pages[0]?.total || 0;
 
-  let sortedProducts = products;
-  // We handle initial sort via backend, but we can still do a local re-sort if needed.
-  // Actually, since we're paginating, local sorting is bad. 
-  // For the purpose of this example, we'll just display what we get from infinite query.
-
+  const handleSortChange = (newSort: string) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('sort', newSort);
+    setSearchParams(newParams);
+    setSortOpen(false);
+  };
 
   return (
     <div className="bg-[#FAFAFA] min-h-screen selection:bg-ash selection:text-white">
@@ -55,7 +81,7 @@ export function Shop() {
             transition={{ duration: 0.8 }}
             className="text-[10px] font-sans font-semibold uppercase tracking-[0.3em] mb-6"
           >
-            Autumn / Winter 2026
+            {category ? category : 'Autumn / Winter 2026'}
           </motion.p>
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
@@ -63,7 +89,7 @@ export function Shop() {
             transition={{ duration: 0.8, delay: 0.1 }}
             className="text-5xl md:text-6xl lg:text-[6rem] font-serif uppercase tracking-tight mb-8 leading-none text-balance"
           >
-            The Collection
+            {category ? category : 'The Collection'}
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
@@ -88,7 +114,7 @@ export function Shop() {
               <Filter className="w-4 h-4" /> Filters
             </button>
             <span className="text-[10px] text-ash-muted font-sans uppercase tracking-[0.2em]">
-              {isLoading ? '...' : products.length} Results
+              {isLoading ? '...' : totalCount} Results
             </span>
           </div>
           
@@ -105,7 +131,7 @@ export function Shop() {
             {sortOpen && (
               <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-ash-light border border-ash-light z-30 py-2">
                 {['Recommended', 'Newest', 'Price: High to Low', 'Price: Low to High'].map(opt => (
-                  <button key={opt} onClick={() => { setSortBy(opt); setSortOpen(false); }} className="w-full text-left px-4 py-2 text-[10px] text-ash-muted hover:text-ash uppercase tracking-[0.2em] font-sans">
+                  <button key={opt} onClick={() => handleSortChange(opt)} className="w-full text-left px-4 py-2 text-[10px] text-ash-muted hover:text-ash uppercase tracking-[0.2em] font-sans">
                     {opt}
                   </button>
                 ))}
@@ -124,19 +150,30 @@ export function Shop() {
           {/* Product Grid */}
           <div className="flex-1">
             {isLoading ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-12 md:gap-x-6">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-12 md:gap-x-6">
                 {[...Array(12)].map((_, i) => (
                   <div key={i} className="animate-pulse">
-                    <div className="bg-white aspect-[3/4] mb-4"></div>
-                    <div className="h-3 bg-white w-3/4 mb-2"></div>
-                    <div className="h-3 bg-white w-1/4"></div>
+                    <div className="bg-ash-light/20 aspect-[3/4] mb-4"></div>
+                    <div className="h-3 bg-ash-light/50 w-3/4 mb-2"></div>
+                    <div className="h-3 bg-ash-light/50 w-1/4"></div>
                   </div>
                 ))}
               </div>
+            ) : products.length === 0 ? (
+               <div className="py-32 flex flex-col items-center justify-center text-center">
+                 <h2 className="typography-display-sm text-ash mb-4 uppercase">No Results Found</h2>
+                 <p className="typography-body text-ash-muted mb-8">Try adjusting your filters or search terms.</p>
+                 <button 
+                   onClick={() => setSearchParams(new URLSearchParams())} 
+                   className="typography-label border-b border-ash pb-1 hover:text-ash-muted hover:border-ash-muted transition-colors"
+                 >
+                   Clear All Filters
+                 </button>
+               </div>
             ) : (
               <>
-                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-12 md:gap-x-6">
-                  {sortedProducts?.map((product, idx) => (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-12 md:gap-x-6">
+                  {products?.map((product, idx) => (
                     <motion.div
                       key={product.id}
                       initial={{ opacity: 0, y: 20 }}

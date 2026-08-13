@@ -1,5 +1,6 @@
 import { motion } from "motion/react"
 import { ArrowRight } from "lucide-react"
+import { Link } from "react-router-dom"
 
 export function Newsletter() {
   return (
@@ -34,7 +35,7 @@ export function Newsletter() {
               </button>
             </form>
             <p className="text-[10px] text-ash-muted mt-8 tracking-[0.1em] uppercase">
-              By subscribing, you agree to our <a href="#" className="underline hover:text-ash transition-colors">Privacy Policy</a> and <a href="#" className="underline hover:text-ash transition-colors">Terms of Service</a>.
+              By subscribing, you agree to our <Link to="/privacy" className="underline hover:text-ash transition-colors outline-none focus-visible:ring-1 focus-visible:ring-ash focus-visible:ring-offset-2">Privacy Policy</Link> and <Link to="/terms" className="underline hover:text-ash transition-colors outline-none focus-visible:ring-1 focus-visible:ring-ash focus-visible:ring-offset-2">Terms of Service</Link>.
             </p>
           </motion.div>
         </div>

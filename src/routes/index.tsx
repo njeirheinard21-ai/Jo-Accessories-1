@@ -11,7 +11,7 @@ function RouteErrorBoundary() {
   console.error("Route Error:", error);
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-white">
-      <h2 className="text-2xl font-serif mb-4 uppercase tracking-widest text-red-600">Oops! Something went wrong</h2>
+      <h2 className="text-2xl font-serif mb-4 uppercase tracking-widest text-ash">Oops! Something went wrong</h2>
       <p className="text-ash-muted mb-6 max-w-md text-sm">
         {error?.message || "An unexpected error occurred while loading this page."}
       </p>

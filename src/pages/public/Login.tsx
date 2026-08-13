@@ -86,30 +86,7 @@ export function Login() {
   };
 
   if (user) {
-    return (
-      <>
-        <SEO title="Account | Jo Accessories" />
-        <div className="container mx-auto px-4 py-32 text-center">
-          <h1 className="text-3xl font-serif mb-4">Welcome back, {user.displayName || user.email}</h1>
-          <div className="flex items-center justify-center gap-4 mt-8">
-            {isStaff && (
-              <button 
-                onClick={() => navigate('/admin')}
-                className="bg-ash text-white px-6 py-2 text-sm uppercase tracking-widest hover:bg-ash/90 transition-colors"
-              >
-                Admin Dashboard
-              </button>
-            )}
-            <button 
-              onClick={() => authService.logout()}
-              className="border border-ash text-ash px-6 py-2 text-sm uppercase tracking-widest hover:bg-white transition-colors"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      </>
-    );
+    return <AccountDashboard />;
   }
 
   return (
@@ -184,7 +161,7 @@ export function Login() {
                   <button 
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-ash-muted hover:text-ash-muted"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 p-2 text-ash-muted hover:text-ash transition-colors outline-none focus-visible:ring-1 focus-visible:ring-ash"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -243,7 +220,7 @@ export function Login() {
                   <button 
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-ash-muted hover:text-ash-muted"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 p-2 text-ash-muted hover:text-ash transition-colors outline-none focus-visible:ring-1 focus-visible:ring-ash"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>

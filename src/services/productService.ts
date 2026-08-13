@@ -1,6 +1,6 @@
 import { 
   collection, doc, getDoc, getDocs, query, where, orderBy, 
-  limit, startAfter, setDoc, updateDoc, deleteDoc, runTransaction, 
+  setDoc, updateDoc, deleteDoc, runTransaction, 
   QueryDocumentSnapshot, writeBatch
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -16,39 +16,85 @@ export interface Product extends CoreProduct {
 
 const COLLECTION_NAME = 'products';
 
+export interface ProductFilters {
+  category?: string;
+  brand?: string[];
+  colors?: string[];
+  minPrice?: number;
+  maxPrice?: number;
+  sort?: string; // 'Recommended', 'Newest', 'Price: High to Low', 'Price: Low to High'
+  search?: string;
+}
+
 export const productService = {
-  getProducts: async (pageSize = 20, lastDoc?: QueryDocumentSnapshot): Promise<{ products: Product[], lastDoc: QueryDocumentSnapshot | null }> => {
+  getProducts: async (pageSize = 20, pageIndex = 0, filters?: ProductFilters): Promise<{ products: Product[], hasNextPage: boolean, total: number }> => {
     try {
-      let q = query(
+      const q = query(
         collection(db, COLLECTION_NAME),
-        where('status', '==', 'active'),
-        orderBy('createdAt', 'desc'),
-        limit(pageSize)
+        where('status', '==', 'active')
       );
-
-      if (lastDoc) {
-        q = query(q, startAfter(lastDoc));
-      }
-
       const snapshot = await getDocs(q);
       
-      // Fallback to mock data if Firestore is empty (for preview purposes)
-      if (snapshot.empty && !lastDoc) {
-        return {
-          products: mockProducts as Product[],
-          lastDoc: null
-        };
+      let allProducts = snapshot.empty ? (mockProducts as Product[]) : snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+
+      // Apply Filters
+      if (filters) {
+        if (filters.category) {
+          allProducts = allProducts.filter(p => p.category?.toLowerCase() === filters.category?.toLowerCase());
+        }
+        if (filters.brand && filters.brand.length > 0) {
+          allProducts = allProducts.filter(p => p.brand && filters.brand!.includes(p.brand));
+        }
+        if (filters.colors && filters.colors.length > 0) {
+          allProducts = allProducts.filter(p => p.colors?.some(c => filters.colors!.includes(c)));
+        }
+        if (filters.minPrice !== undefined) {
+          allProducts = allProducts.filter(p => p.price >= filters.minPrice!);
+        }
+        if (filters.maxPrice !== undefined) {
+          allProducts = allProducts.filter(p => p.price <= filters.maxPrice!);
+        }
+        if (filters.search) {
+          const s = filters.search.toLowerCase();
+          allProducts = allProducts.filter(p => 
+            p.name.toLowerCase().includes(s) || 
+            (p.brand && p.brand.toLowerCase().includes(s)) ||
+            (p.category && p.category.toLowerCase().includes(s))
+          );
+        }
+        
+        // Apply Sort
+        if (filters.sort) {
+          switch (filters.sort) {
+            case 'Newest':
+              allProducts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+              break;
+            case 'Price: Low to High':
+              allProducts.sort((a, b) => a.price - b.price);
+              break;
+            case 'Price: High to Low':
+              allProducts.sort((a, b) => b.price - a.price);
+              break;
+            default: // Recommended / null
+              // No strict sort, could sort by featured
+              allProducts.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
+              break;
+          }
+        }
       }
 
-      const products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+      const total = allProducts.length;
+      const start = pageIndex * pageSize;
+      const paginatedProducts = allProducts.slice(start, start + pageSize);
+
       return {
-        products,
-        lastDoc: snapshot.docs[snapshot.docs.length - 1] || null
+        products: paginatedProducts,
+        hasNextPage: start + pageSize < total,
+        total
       };
     } catch (error: any) {
       console.warn("Warning fetching products:", error?.message || error);
-      // Fallback to mock data on error (e.g., missing index)
-      return { products: mockProducts as Product[], lastDoc: null };
+      return { products: mockProducts.slice(pageIndex * pageSize, (pageIndex + 1) * pageSize) as Product[], hasNextPage: false, total: mockProducts.length };
     }
   },
   
@@ -111,7 +157,6 @@ export const productService = {
     await auditService.log('product', 'update_inventory', `Reserved ${quantity} stock for product ${productId}`);
   },
 
-  // Admin util to seed database
   seedDatabase: async (): Promise<void> => {
     const batch = writeBatch(db);
     for (const p of mockProducts) {

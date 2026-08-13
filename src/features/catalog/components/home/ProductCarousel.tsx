@@ -1,6 +1,6 @@
 import { useRef, memo } from "react"
 import { Link } from "react-router-dom"
-import { motion, useScroll, useTransform } from "motion/react"
+import { motion } from "motion/react"
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react"
 import { ProductCard } from "../../../../components/ProductCard"
 import { Product } from "../../../../core/domain/Product"
@@ -25,9 +25,8 @@ export const ProductCarousel = memo(function ProductCarousel({ title, subtitle, 
     }
   };
 
-  const bgClass = dark ? 'bg-ash text-white' : 'bg-[#FAFAFA] text-ash';
+  const bgClass = dark ? 'bg-ash text-white' : 'bg-white text-ash';
   const headingClass = dark ? 'text-white' : 'text-ash';
-  const borderClass = dark ? 'border-white/10' : 'border-ash-light';
   const btnClass = dark ? 'border-white/20 hover:border-white' : 'border-ash/30 hover:border-ash';
   const navBtnClass = dark ? 'border border-white/20 text-white hover:bg-white hover:text-ash' : 'border border-ash-light text-ash hover:bg-ash hover:text-white';
 
@@ -42,13 +41,13 @@ export const ProductCarousel = memo(function ProductCarousel({ title, subtitle, 
           className="flex flex-col md:flex-row items-end justify-between mb-16 md:mb-24 gap-6"
         >
           <div>
-            {subtitle && <p className="text-[10px] font-sans font-semibold tracking-[0.3em] uppercase mb-4 text-ash-muted">{subtitle}</p>}
-            <h2 className={`text-4xl md:text-5xl lg:text-[5rem] font-serif tracking-tight leading-[0.9] uppercase ${headingClass}`}>{title}</h2>
+            {subtitle && <p className="typography-label tracking-[0.3em] mb-4 text-ash-muted">{subtitle}</p>}
+            <h2 className={`typography-display-sm md:text-5xl lg:text-[5rem] tracking-tight leading-[0.9] uppercase ${headingClass}`}>{title}</h2>
           </div>
           
           <div className="flex items-center gap-8">
             <Link to={viewAllLink} className={`hidden md:flex items-center gap-6 border-b pb-2 luxury-transition ${btnClass}`}>
-              <span className="text-[10px] font-sans font-semibold tracking-[0.2em] uppercase">Discover</span>
+              <span className="typography-label">DISCOVER</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
             <div className="flex gap-3">
@@ -87,3 +86,4 @@ export const ProductCarousel = memo(function ProductCarousel({ title, subtitle, 
     </section>
   )
 })
+

@@ -4,23 +4,35 @@
   --font-sans: "Montserrat", system-ui, -apple-system, sans-serif;
   --font-serif: "Cormorant Garamond", ui-serif, Georgia, serif;
   
-  --color-background: #FFFFFF;
-  --color-foreground: #2C3039;
-  --color-ash: #2C3039;
-  --color-ash-light: #E8EAED;
-  --color-ash-muted: #6B7280;
+  --color-brand-black: #000000;
+  --color-brand-charcoal: #111111;
+  --color-brand-white: #FFFFFF;
+  --color-brand-offwhite: #FAF9F6;
+  --color-brand-gray: #E5E5E5;
+  --color-brand-muted: #767676;
+
+  --color-background: var(--color-brand-white);
+  --color-foreground: var(--color-brand-charcoal);
+  --color-ash: var(--color-brand-charcoal);
+  --color-ash-light: var(--color-brand-gray);
+  --color-ash-muted: var(--color-brand-muted);
   
-  --color-border: hsl(220 13% 91%);
-  --color-input: hsl(220 13% 91%);
-  --color-ring: hsl(222 13% 20%);
-  --color-primary: hsl(222 13% 20%);
-  --color-primary-foreground: hsl(0 0% 100%);
-  --color-secondary: hsl(220 14% 96%);
-  --color-secondary-foreground: hsl(222 13% 20%);
-  --color-muted: hsl(220 14% 96%);
-  --color-muted-foreground: hsl(215 16% 47%);
-  --color-accent: hsl(220 14% 96%);
-  --color-accent-foreground: hsl(222 13% 20%);
+  --color-border: var(--color-brand-gray);
+  --color-input: var(--color-brand-gray);
+  --color-ring: var(--color-brand-charcoal);
+  
+  --color-primary: var(--color-brand-charcoal);
+  --color-primary-foreground: var(--color-brand-white);
+  
+  --color-secondary: var(--color-brand-offwhite);
+  --color-secondary-foreground: var(--color-brand-charcoal);
+  
+  --color-muted: var(--color-brand-offwhite);
+  --color-muted-foreground: var(--color-brand-muted);
+  
+  --color-accent: var(--color-brand-offwhite);
+  --color-accent-foreground: var(--color-brand-charcoal);
+  
   --color-destructive: hsl(0 84.2% 60.2%);
   --color-destructive-foreground: hsl(0 0% 98%);
   
@@ -31,33 +43,33 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%; /* #FFFFFF */
-    --foreground: 222 13% 20%; /* #2C3039 */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 7%;
     
     --card: 0 0% 100%;
-    --card-foreground: 222 13% 20%;
+    --card-foreground: 0 0% 7%;
     
     --popover: 0 0% 100%;
-    --popover-foreground: 222 13% 20%;
+    --popover-foreground: 0 0% 7%;
     
-    --primary: 222 13% 20%;
+    --primary: 0 0% 7%;
     --primary-foreground: 0 0% 100%;
     
-    --secondary: 220 14% 96%; /* #F3F4F6 */
-    --secondary-foreground: 222 13% 20%;
+    --secondary: 40 14% 97%;
+    --secondary-foreground: 0 0% 7%;
     
-    --muted: 220 14% 96%;
-    --muted-foreground: 215 16% 47%; /* #6B7280 */
+    --muted: 40 14% 97%;
+    --muted-foreground: 0 0% 46%;
     
-    --accent: 220 14% 96%;
-    --accent-foreground: 222 13% 20%;
+    --accent: 40 14% 97%;
+    --accent-foreground: 0 0% 7%;
     
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     
-    --border: 220 13% 91%; /* #E8EAED */
-    --input: 220 13% 91%;
-    --ring: 222 13% 20%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 0 0% 7%;
     --radius: 0rem;
   }
 }
@@ -76,7 +88,7 @@
   }
   
   h1, h2, h3, h4, h5, h6 {
-    @apply font-serif;
+    @apply font-serif font-normal tracking-tight;
   }
 }
 
@@ -92,6 +104,76 @@
     display: none;
   }
   .luxury-transition {
-    @apply transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)];
+    @apply transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)];
+  }
+  
+  /* Luxury Typography Tokens */
+  .typography-display-xl {
+    @apply text-5xl md:text-7xl lg:text-8xl font-serif font-normal leading-[0.9] tracking-tight uppercase;
+  }
+  .typography-display-lg {
+    @apply text-4xl md:text-5xl lg:text-6xl font-serif font-normal leading-tight tracking-tight uppercase;
+  }
+  .typography-display-md {
+    @apply text-3xl md:text-4xl font-serif font-normal leading-tight tracking-tight;
+  }
+  .typography-h1 {
+    @apply text-2xl md:text-3xl font-serif font-normal leading-tight tracking-tight;
+  }
+  .typography-h2 {
+    @apply text-xl md:text-2xl font-serif font-normal leading-tight tracking-tight;
+  }
+  .typography-h3 {
+    @apply text-lg md:text-xl font-serif font-normal leading-snug tracking-tight;
+  }
+  .typography-body-lg {
+    @apply text-base md:text-lg font-sans font-light leading-relaxed;
+  }
+  .typography-body {
+    @apply text-sm md:text-base font-sans font-light leading-relaxed;
+  }
+  .typography-body-sm {
+    @apply text-xs md:text-sm font-sans font-light leading-relaxed;
+  }
+  .typography-caption {
+    @apply text-xs font-sans font-light leading-normal text-brand-muted;
+  }
+  .typography-nav {
+    @apply text-[10px] md:text-[11px] font-sans font-medium uppercase tracking-[0.15em];
+  }
+  .typography-label {
+    @apply text-[9px] md:text-[10px] font-sans font-semibold uppercase tracking-[0.2em];
+  }
+  .typography-price {
+    @apply text-sm font-sans font-medium tracking-wide;
+  }
+  
+  /* Luxury Spacing Tokens */
+  .section-spacing {
+    @apply py-16 md:py-24 lg:py-32;
+  }
+  .section-spacing-sm {
+    @apply py-12 md:py-16;
+  }
+  .container-luxury {
+    @apply w-full max-w-[1600px] mx-auto px-4 md:px-8 lg:px-12;
+  }
+}
+
+@layer base {
+  a, button {
+    @apply focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ash focus-visible:ring-offset-2;
+  }
+  input, textarea, select {
+    @apply focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ash focus-visible:border-ash;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

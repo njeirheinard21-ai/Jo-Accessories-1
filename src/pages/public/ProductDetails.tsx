@@ -1,8 +1,8 @@
 import { useEffect, useState, lazy, Suspense } from "react"
 import { useParams, Link } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
-import { productService } from "../../services/productService"
-import { Heart, Share2, Truck, RefreshCcw, ChevronDown, Check, Ruler } from "lucide-react"
+import { productService, Product } from "../../services/productService"
+import { Heart, Share2, Truck, RefreshCcw, ChevronDown, Check, Ruler, AlertCircle } from "lucide-react"
 import { useCartStore } from "../../stores/cartStore"
 import { useWishlistStore } from "../../stores/wishlistStore"
 import { useRecentlyViewedStore } from "../../stores/recentlyViewedStore"
@@ -17,17 +17,18 @@ export function ProductDetails() {
   const { id } = useParams()
   const { addItem: addWishlist, removeItem: removeWishlist, isInWishlist } = useWishlistStore()
   const { addProduct: addRecentlyViewed, items: recentlyViewed } = useRecentlyViewedStore()
+
   const [activeImage, setActiveImage] = useState(0)
   const [activeAccordion, setActiveAccordion] = useState<string | null>('details')
   const [isFullScreen, setIsFullScreen] = useState(false)
   const [showStickyPanel, setShowStickyPanel] = useState(false)
+  const [selectedColor, setSelectedColor] = useState<string | null>(null)
   
   const { data: product, isLoading } = useQuery({
     queryKey: ['product', id],
     queryFn: () => productService.getProductById(id!),
     enabled: !!id
   })
-
 
   useEffect(() => {
     const handleScroll = () => {
@@ -41,19 +42,48 @@ export function ProductDetails() {
     if (product) {
       addRecentlyViewed(product)
       setActiveImage(0) // reset on product change
+      if (product.colors && product.colors.length > 0) {
+        setSelectedColor(product.colors[0]);
+      } else {
+        setSelectedColor(null);
+      }
     }
   }, [product, addRecentlyViewed])
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-20 flex justify-center items-center h-[60vh]">
-        <div className="text-[10px] font-sans font-semibold uppercase tracking-[0.3em] text-ash-muted animate-pulse">Loading</div>
+      <div className="container mx-auto px-6 lg:px-12 py-12">
+        <div className="flex flex-col lg:flex-row gap-12 lg:gap-24">
+          <div className="w-full lg:w-[55%] animate-pulse">
+             <div className="aspect-[4/5] bg-ash-light/20 w-full"></div>
+          </div>
+          <div className="w-full lg:w-[45%] lg:py-10 animate-pulse">
+             <div className="h-4 bg-ash-light/20 w-1/4 mb-4"></div>
+             <div className="h-8 bg-ash-light/20 w-3/4 mb-6"></div>
+             <div className="h-6 bg-ash-light/20 w-1/4 mb-12"></div>
+             <div className="h-24 bg-ash-light/20 w-full mb-8"></div>
+             <div className="h-12 bg-ash-light/20 w-full"></div>
+          </div>
+        </div>
       </div>
     )
   }
 
   if (!product) {
-    return <div className="container mx-auto px-4 py-20 text-center font-serif text-2xl uppercase tracking-widest">Product not found</div>
+    return (
+      <div className="container mx-auto px-4 py-32 flex flex-col items-center text-center selection:bg-ash selection:text-white">
+        <h1 className="text-4xl md:text-5xl font-serif text-ash uppercase tracking-widest mb-6">Piece Not Found</h1>
+        <p className="text-ash-muted font-sans font-light text-sm max-w-sm mb-12 leading-[1.8]">
+          We couldn't locate this item in our current collection. It may have been archived or is no longer available.
+        </p>
+        <Link 
+          to="/shop" 
+          className="inline-block border border-ash text-ash px-12 py-4 text-[10px] uppercase tracking-[0.2em] font-sans font-bold hover:bg-ash hover:text-white luxury-transition outline-none focus-visible:ring-1 focus-visible:ring-ash focus-visible:ring-offset-2"
+        >
+          Return to Boutique
+        </Link>
+      </div>
+    )
   }
 
   const isWished = isInWishlist(product.id)
@@ -61,8 +91,15 @@ export function ProductDetails() {
   // Mock related products based on category
   const relatedProducts = mockProducts.filter(p => p.category === product.category && p.id !== product.id).slice(0, 6)
   
-  // Generate mock images for gallery
-  const images = [product.image, ...Array(3).fill(product.image)]
+  // Generate real images for gallery
+  const images = product.images && product.images.length > 0 ? product.images : [product.image];
+  if (images.length === 1 && product.hoverImage) {
+    images.push(product.hoverImage);
+  }
+  // Fill array if needed for layout purposes to have multiple thumbnails
+  while (images.length < 4) {
+    images.push(product.image);
+  }
 
   const toggleAccordion = (id: string) => {
     setActiveAccordion(prev => prev === id ? null : id)
@@ -72,12 +109,12 @@ export function ProductDetails() {
     "@context": "https://schema.org/",
     "@type": "Product",
     "name": product.name,
-    "image": [product.image],
-    "description": `Shop the ${product.name}. Crafted from the finest materials, defining modern luxury.`,
+    "image": images,
+    "description": product.description || `Shop the ${product.name}. Crafted from the finest materials, defining modern luxury.`,
     "sku": product.id,
     "brand": {
       "@type": "Brand",
-      "name": "Jo Accessories"
+      "name": product.brand || "Jo Accessories"
     },
     "offers": {
       "@type": "Offer",
@@ -89,26 +126,28 @@ export function ProductDetails() {
     }
   };
 
+  const outOfStock = product.stock <= 0;
+  const lowStock = product.stock > 0 && product.stock <= 5;
+
   return (
-    <div className="bg-white">
+    <div className="bg-white selection:bg-ash selection:text-white">
       <SEO 
         title={`${product.name} | Jo Accessories`}
-        description={`Shop the ${product.name}. Crafted from the finest materials, defining modern luxury.`}
+        description={product.description || `Shop the ${product.name}. Crafted from the finest materials, defining modern luxury.`}
         image={product.image}
         structuredData={productSchema}
       />
-
       
       {/* Breadcrumb */}
-      <div className="container mx-auto px-4 md:px-6 py-6 text-xs text-ash-muted uppercase tracking-widest">
+      <div className="container mx-auto px-4 md:px-6 py-6 text-[10px] font-sans font-semibold text-ash-muted uppercase tracking-[0.2em]">
         <Link to="/" className="hover:text-ash transition-colors">Home</Link>
         <span className="mx-2">/</span>
-        <Link to={`/shop?category=${product.category}`} className="hover:text-ash transition-colors">{product.category}</Link>
+        <Link to={`/shop?category=${encodeURIComponent(product.category)}`} className="hover:text-ash transition-colors">{product.category}</Link>
         <span className="mx-2">/</span>
         <span className="text-ash">{product.name}</span>
       </div>
 
-      <div className="container mx-auto px-4 md:px-8 py-12 lg:py-24">
+      <div className="container mx-auto px-4 md:px-8 py-4 md:py-12 lg:py-16">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 xl:gap-24">
           
           {/* Images Section */}
@@ -137,7 +176,7 @@ export function ProductDetails() {
                   transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                   src={images[activeImage]} 
                   alt={product.name} 
-                  className="w-full h-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-150 transform-origin-center"
+                  className="w-full h-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] md:group-hover:scale-150 transform-origin-center"
                   style={{ transformOrigin: 'center center' }}
                   onMouseMove={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect()
@@ -166,48 +205,76 @@ export function ProductDetails() {
             </div>
           </div>
 
-          {/* Details Section */}
+          {/* Details Section (Sticky Panel) */}
           <div className="lg:col-span-5 flex flex-col lg:sticky lg:top-32 lg:max-h-[calc(100vh-160px)] overflow-y-auto scrollbar-hide lg:pl-6 pb-12">
             <div className="mb-10">
               <div className="flex items-center justify-between mb-8">
                 <p className="text-[10px] font-sans font-semibold uppercase tracking-[0.2em] text-ash-muted">
                   {product.brand || 'Jo Accessories'}
                 </p>
-                <div className="flex items-center gap-1">
-                  {[1,2,3,4,5].map(s => (
-                    <svg key={s} className="w-3 h-3 text-ash fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-                  ))}
-                  <span className="text-[10px] font-sans font-medium uppercase tracking-[0.2em] text-ash-muted underline ml-2 cursor-pointer hover:text-ash transition-colors">(124 Reviews)</span>
-                </div>
+                {product.isNew && (
+                  <span className="text-[10px] font-sans font-semibold uppercase tracking-[0.2em] px-2 py-1 bg-ash text-white">New Season</span>
+                )}
               </div>
               
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif uppercase tracking-tight text-ash mb-6 leading-none text-balance">{product.name}</h1>
-              <p className="text-xl md:text-2xl font-serif italic tracking-tight text-ash">${product.price.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD</p>
+              <h1 className="text-4xl md:text-5xl font-serif uppercase tracking-tight text-ash mb-6 leading-none text-balance">{product.name}</h1>
+              
+              <div className="flex flex-col gap-1">
+                <p className="text-xl md:text-2xl font-serif italic tracking-tight text-ash">${product.price.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD</p>
+                {product.compareAtPrice && product.compareAtPrice > product.price && (
+                  <p className="text-sm font-sans text-ash-muted line-through">${product.compareAtPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD</p>
+                )}
+              </div>
             </div>
 
             {/* Color Selection */}
-            <div className="mb-10">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-[10px] font-sans font-semibold tracking-[0.2em] uppercase">Color</h3>
-                <span className="text-[10px] font-sans font-medium text-ash-muted uppercase tracking-[0.2em]">Black Noir</span>
+            {product.colors && product.colors.length > 0 && (
+              <div className="mb-10">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-[10px] font-sans font-semibold tracking-[0.2em] uppercase">Color</h3>
+                </div>
+                <div className="flex gap-4">
+                  {product.colors.map((color, i) => (
+                    <button 
+                      key={i} 
+                      onClick={() => setSelectedColor(color)}
+                      aria-label={`Color option ${color}`} 
+                      className={`w-10 h-10 rounded-full ring-1 ring-offset-4 transition-all duration-300 ${selectedColor === color ? 'ring-ash' : 'ring-transparent hover:ring-ash-light border border-ash/10'}`} 
+                      style={{ backgroundColor: color }}
+                    />
+                  ))}
+                </div>
               </div>
-              <div className="flex gap-4">
-                {['bg-ash', 'bg-[#f4f4f4] border border-ash-light', 'bg-stone-500', 'bg-[#6d4c41]'].map((color, i) => (
-                  <button key={i} aria-label={`Color option ${i}`} className={`w-10 h-10 rounded-full ${color} ring-1 ring-offset-4 transition-all duration-300 ${i === 0 ? 'ring-ash' : 'ring-transparent hover:ring-ash-light'}`} />
-                ))}
-              </div>
+            )}
+
+            {/* Stock status */}
+            <div className="mb-8">
+              {outOfStock ? (
+                <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-semibold text-red-700">
+                  <AlertCircle className="w-4 h-4" strokeWidth={2} /> Sold Out
+                </div>
+              ) : lowStock ? (
+                <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-semibold text-amber-700">
+                  <AlertCircle className="w-4 h-4" strokeWidth={2} /> Only {product.stock} Left In Stock
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-semibold text-green-700">
+                  <Check className="w-4 h-4" strokeWidth={2} /> Available Online
+                </div>
+              )}
             </div>
 
             {/* Actions */}
-            <div className="flex items-center gap-4 mb-10">
+            <div className="flex items-center gap-4 mb-12">
               <button 
                 onClick={() => {
                   useCartStore.getState().addItem(product);
                   useCartStore.getState().openCart();
                 }}
-                className="flex-1 bg-ash text-white py-5 uppercase tracking-[0.2em] text-[10px] font-sans font-medium hover:bg-ash/90 luxury-transition"
+                disabled={outOfStock}
+                className="flex-1 bg-ash text-white py-5 uppercase tracking-[0.2em] text-[10px] font-sans font-semibold hover:bg-ash/90 luxury-transition outline-none focus-visible:ring-1 focus-visible:ring-ash focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Add to Bag
+                {outOfStock ? 'Sold Out' : 'Add to Bag'}
               </button>
               <button 
                 onClick={() => isWished ? removeWishlist(product.id) : addWishlist(product)}
@@ -218,20 +285,15 @@ export function ProductDetails() {
               </button>
             </div>
 
-            {/* Stock status */}
-            <div className="flex items-center gap-3 mb-12 text-[10px] uppercase tracking-[0.2em] font-semibold text-green-700">
-              <Check className="w-4 h-4" strokeWidth={2} /> Available Online
-            </div>
-
             {/* Accordions */}
             <div className="border-t border-ash-light divide-y divide-ash-light mb-12">
               {/* Details */}
               <div className="py-6">
                 <button 
                   onClick={() => toggleAccordion('details')}
-                  className="flex items-center justify-between w-full text-left outline-none group"
+                  className="flex items-center justify-between w-full text-left outline-none focus-visible:ring-1 focus-visible:ring-ash focus-visible:ring-offset-2 group"
                 >
-                  <span className="text-[10px] font-sans font-semibold uppercase tracking-[0.2em] group-hover:text-ash-muted text-ash transition-colors">Product Details</span>
+                  <span className="text-[10px] font-sans font-semibold uppercase tracking-[0.2em] group-hover:text-ash-muted text-ash transition-colors">Description</span>
                   <ChevronDown className={`w-4 h-4 text-ash-muted transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${activeAccordion === 'details' ? 'rotate-180' : ''}`} />
                 </button>
                 <AnimatePresence>
@@ -243,53 +305,68 @@ export function ProductDetails() {
                       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                       className="overflow-hidden"
                     >
-                      <div className="mt-6 text-sm font-sans text-ash-muted leading-[1.8] space-y-5 font-light">
-                        <p>{product.description || "Crafted from the finest materials, this piece defines modern luxury. Its versatile design makes it the perfect companion for both everyday elegance and special occasions."}</p>
-                        <ul className="list-disc pl-5 space-y-2 text-ash-muted">
-                          <li>100% Calfskin Leather</li>
-                          <li>Gold-toned hardware</li>
-                          <li>Made in Italy</li>
-                          <li>Dimensions: 24 x 16 x 6 cm</li>
-                        </ul>
+                      <div className="mt-6 prose prose-sm max-w-none text-ash-muted font-light leading-[1.8]">
+                        <p>{product.description || "An embodiment of modern luxury, meticulously crafted to elevate the everyday."}</p>
+                        {product.materials && product.materials.length > 0 && (
+                          <div className="mt-4">
+                            <strong className="text-ash font-sans text-xs uppercase tracking-widest block mb-2">Materials & Craftsmanship</strong>
+                            <ul className="list-disc pl-4 space-y-1">
+                              {product.materials.map(m => <li key={m}>{m}</li>)}
+                            </ul>
+                          </div>
+                        )}
+                        {product.dimensions && (
+                          <div className="mt-4">
+                            <strong className="text-ash font-sans text-xs uppercase tracking-widest block mb-2">Dimensions</strong>
+                            <p>{product.dimensions}</p>
+                          </div>
+                        )}
+                        {product.care && (
+                          <div className="mt-4">
+                            <strong className="text-ash font-sans text-xs uppercase tracking-widest block mb-2">Care Instructions</strong>
+                            <p>{product.care}</p>
+                          </div>
+                        )}
                       </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
 
-              
-              <div className="py-6">
-                <button 
-                  onClick={() => toggleAccordion('styling')}
-                  className="flex items-center justify-between w-full text-left outline-none group"
-                >
-                  <span className="text-[10px] font-sans font-sans font-medium uppercase tracking-[0.2em] group-hover:text-ash-muted transition-colors">Styling & Occasions</span>
-                  <ChevronDown className={`w-4 h-4 text-ash-muted transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${activeAccordion === 'styling' ? 'rotate-180' : ''}`} />
-                </button>
-                <AnimatePresence>
-                  {activeAccordion === 'styling' && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                      className="overflow-hidden"
-                    >
-                      <div className="mt-6 text-sm font-sans text-ash-muted leading-[1.8] space-y-5 font-light">
-                        <p>Elevate your ensemble by pairing this piece with tailored silhouettes or relaxed weekend wear. Perfect for evening galas, business luncheons, or elevated travel.</p>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+              {product.authenticity && (
+                <div className="py-6">
+                  <button 
+                    onClick={() => toggleAccordion('authenticity')}
+                    className="flex items-center justify-between w-full text-left outline-none focus-visible:ring-1 focus-visible:ring-ash focus-visible:ring-offset-2 group"
+                  >
+                    <span className="text-[10px] font-sans font-semibold uppercase tracking-[0.2em] group-hover:text-ash-muted text-ash transition-colors">Authenticity</span>
+                    <ChevronDown className={`w-4 h-4 text-ash-muted transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${activeAccordion === 'authenticity' ? 'rotate-180' : ''}`} />
+                  </button>
+                  <AnimatePresence>
+                    {activeAccordion === 'authenticity' && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                        className="overflow-hidden"
+                      >
+                        <div className="mt-6 text-sm font-light text-ash-muted leading-[1.8]">
+                          <p>{product.authenticity}</p>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
 
               {/* Shipping */}
               <div className="py-6">
                 <button 
                   onClick={() => toggleAccordion('shipping')}
-                  className="flex items-center justify-between w-full text-left outline-none group"
+                  className="flex items-center justify-between w-full text-left outline-none focus-visible:ring-1 focus-visible:ring-ash focus-visible:ring-offset-2 group"
                 >
-                  <span className="text-[10px] font-sans font-semibold uppercase tracking-[0.2em] group-hover:text-ash-muted text-ash transition-colors">Shipping & Returns</span>
+                  <span className="text-[10px] font-sans font-semibold uppercase tracking-[0.2em] group-hover:text-ash-muted text-ash transition-colors">Delivery & Returns</span>
                   <ChevronDown className={`w-4 h-4 text-ash-muted transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${activeAccordion === 'shipping' ? 'rotate-180' : ''}`} />
                 </button>
                 <AnimatePresence>
@@ -323,18 +400,17 @@ export function ProductDetails() {
               </div>
             </div>
             
-            <div className="mt-auto pt-8"> 
-               <button className="flex items-center gap-3 text-[10px] uppercase tracking-[0.2em] font-sans font-medium hover:text-ash-muted transition-colors mb-6 outline-none">
+            <div className="mt-auto pt-8">
+               <button className="flex items-center gap-3 text-[10px] uppercase tracking-[0.2em] font-sans font-medium hover:text-ash-muted transition-colors mb-6 outline-none focus-visible:ring-1 focus-visible:ring-ash focus-visible:ring-offset-2">
                  <Ruler className="w-4 h-4" strokeWidth={1.5} /> Size Guide
                </button>
-               <button className="flex items-center gap-3 text-[10px] uppercase tracking-[0.2em] font-sans font-medium hover:text-ash-muted transition-colors outline-none">
+               <button className="flex items-center gap-3 text-[10px] uppercase tracking-[0.2em] font-sans font-medium hover:text-ash-muted transition-colors outline-none focus-visible:ring-1 focus-visible:ring-ash focus-visible:ring-offset-2">
                  <Share2 className="w-4 h-4" strokeWidth={1.5} /> Share
                </button>
             </div>
           </div>
         </div>
       </div>
-
 
       <AnimatePresence>
         {isFullScreen && (
@@ -347,7 +423,7 @@ export function ProductDetails() {
           >
             <div className="absolute top-0 left-0 w-full p-6 flex justify-between items-center z-10">
               <span className="text-[10px] font-sans uppercase tracking-[0.2em] font-medium">{product.name}</span>
-              <button onClick={() => setIsFullScreen(false)} className="p-2 hover:opacity-50 transition-opacity outline-none">
+              <button onClick={() => setIsFullScreen(false)} className="p-2 hover:opacity-50 transition-opacity outline-none focus-visible:ring-1 focus-visible:ring-ash focus-visible:ring-offset-2">
                 <X className="w-6 h-6" strokeWidth={1} />
               </button>
             </div>
@@ -355,7 +431,7 @@ export function ProductDetails() {
             <div className="flex-1 relative flex items-center justify-center p-4">
               <button 
                 onClick={(e) => { e.stopPropagation(); setActiveImage(prev => (prev === 0 ? images.length - 1 : prev - 1)); }}
-                className="absolute left-6 top-1/2 -translate-y-1/2 p-4 hover:opacity-50 transition-opacity outline-none z-10 hidden md:block"
+                className="absolute left-6 top-1/2 -translate-y-1/2 p-4 hover:opacity-50 transition-opacity outline-none focus-visible:ring-1 focus-visible:ring-ash focus-visible:ring-offset-2 z-10 hidden md:block"
               >
                 <ArrowLeft className="w-8 h-8" strokeWidth={1} />
               </button>
@@ -373,7 +449,7 @@ export function ProductDetails() {
               
               <button 
                 onClick={(e) => { e.stopPropagation(); setActiveImage(prev => (prev === images.length - 1 ? 0 : prev + 1)); }}
-                className="absolute right-6 top-1/2 -translate-y-1/2 p-4 hover:opacity-50 transition-opacity outline-none z-10 hidden md:block"
+                className="absolute right-6 top-1/2 -translate-y-1/2 p-4 hover:opacity-50 transition-opacity outline-none focus-visible:ring-1 focus-visible:ring-ash focus-visible:ring-offset-2 z-10 hidden md:block"
               >
                 <ArrowRight className="w-8 h-8" strokeWidth={1} />
               </button>
@@ -394,7 +470,7 @@ export function ProductDetails() {
         )}
       </AnimatePresence>
 
-
+      {/* Mobile Sticky Add to Bag */}
       <AnimatePresence>
         {showStickyPanel && (
           <motion.div 
@@ -402,13 +478,13 @@ export function ProductDetails() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed bottom-0 left-0 w-full bg-white/90 backdrop-blur-md border-t border-ash-light z-[40] py-4 px-6 md:px-12 flex items-center justify-between shadow-[0_-10px_40px_rgba(0,0,0,0.05)]"
+            className="fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-md border-t border-ash-light z-[40] py-4 px-6 md:px-12 flex lg:hidden items-center justify-between shadow-[0_-10px_40px_rgba(0,0,0,0.05)]"
           >
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-4">
               <img loading="lazy" decoding="async" src={images[0]} alt={product.name} className="w-12 h-16 object-cover hidden sm:block bg-white" />
               <div>
-                <h4 className="text-[10px] font-sans font-bold uppercase tracking-[0.2em]">{product.name}</h4>
-                <p className="text-sm font-serif italic text-ash-muted">${product.price.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD</p>
+                <h4 className="text-[10px] font-sans font-bold uppercase tracking-[0.2em] line-clamp-1">{product.name}</h4>
+                <p className="text-xs font-serif italic text-ash-muted">${product.price.toLocaleString('en-US', { minimumFractionDigits: 2 })} USD</p>
               </div>
             </div>
             <button 
@@ -416,9 +492,10 @@ export function ProductDetails() {
                 useCartStore.getState().addItem(product);
                 useCartStore.getState().openCart();
               }}
-              className="bg-ash text-white px-8 md:px-12 py-4 uppercase tracking-[0.2em] text-[10px] font-sans font-medium hover:bg-ash/90 luxury-transition outline-none"
+              disabled={outOfStock}
+              className="bg-ash text-white px-6 py-4 uppercase tracking-[0.2em] text-[10px] font-sans font-semibold hover:bg-ash/90 luxury-transition outline-none focus-visible:ring-1 focus-visible:ring-ash focus-visible:ring-offset-2 disabled:opacity-50"
             >
-              Add to Bag
+              {outOfStock ? 'Sold Out' : 'Add to Bag'}
             </button>
           </motion.div>
         )}
@@ -450,4 +527,3 @@ export function ProductDetails() {
     </div>
   )
 }
-

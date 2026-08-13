@@ -4,11 +4,8 @@ import { SEO } from "../../components/SEO"
 import { mockProducts } from "../../data/mockProducts"
 import { HeroSection } from "../../features/catalog/components/home/HeroSection"
 
+const CategorySection = lazy(() => import("../../features/catalog/components/home/CategorySection").then(m => ({ default: m.CategorySection })))
 const ProductCarousel = lazy(() => import("../../features/catalog/components/home/ProductCarousel").then(m => ({ default: m.ProductCarousel })))
-const Lookbook = lazy(() => import("../../features/catalog/components/home/Lookbook").then(m => ({ default: m.Lookbook })))
-const BrandStory = lazy(() => import("../../features/marketing/components/BrandStory").then(m => ({ default: m.BrandStory })))
-const Testimonials = lazy(() => import("../../features/marketing/components/Testimonials").then(m => ({ default: m.Testimonials })))
-const SocialGallery = lazy(() => import("../../features/marketing/components/SocialGallery").then(m => ({ default: m.SocialGallery })))
 const Newsletter = lazy(() => import("../../features/marketing/components/Newsletter").then(m => ({ default: m.Newsletter })))
 
 export function Home() {
@@ -22,6 +19,10 @@ export function Home() {
       
       <HeroSection />
       
+      <Suspense fallback={<div className="h-96"></div>}>
+        <CategorySection />
+      </Suspense>
+
       <Suspense fallback={<div className="h-96"></div>}>
         <div className="container mx-auto px-6 lg:px-12 pt-16 md:pt-24 pb-4 md:pb-6">
           <h2 className="text-4xl md:text-5xl font-serif uppercase tracking-tight text-center mb-12">Featured Piece</h2>
@@ -42,7 +43,6 @@ export function Home() {
           className="!pt-8 md:!pt-12"
         />
         
-        <Lookbook />
         
         <ProductCarousel 
           title="Curated Edits" 
@@ -51,7 +51,6 @@ export function Home() {
           viewAllLink="/shop?collection=trending" 
         />
         
-        <BrandStory />
         
         <ProductCarousel 
           title="Best Sellers" 
@@ -61,9 +60,7 @@ export function Home() {
           dark={true}
         />
         
-        <Testimonials />
         
-        <SocialGallery />
         
         <Newsletter />
       </Suspense>
